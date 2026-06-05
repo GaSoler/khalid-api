@@ -1,0 +1,43 @@
+src/application/use-cases/admin/
+
+├── appointments/
+│   ├── list-all-appointments.use-case.ts      (todos os agendamentos, filtrado por período)
+│   ├── get-appointment.use-case.ts            (detalhe de qualquer agendamento)
+│   └── cancel-appointment.use-case.ts         (cancelar agendamento de qualquer um)
+│
+├── users/
+│   ├── list-users.use-case.ts                 (listar todos usuários com filtros: role, search)
+│   ├── get-user.use-case.ts                   (detalhe de um usuário)
+│   └── change-user-role.use-case.ts           (promover customer → barber, barber → admin, etc)
+│
+├── services/
+│   ├── list-services.use-case.ts              (listar TODOS, ativos + inativos)
+│   ├── get-service.use-case.ts                (detalhe de um serviço)
+│   ├── create-service.use-case.ts             (criar novo serviço)
+│   ├── update-service.use-case.ts             (editar serviço)
+│   └── delete-service.use-case.ts             (soft delete)
+│
+└── reports/
+    ├── get-summary-report.use-case.ts         (resumo geral: total agendamentos, receita, clientes)
+    ├── get-barber-performance.use-case.ts     (por barbeiro: agendamentos, receita, rating)
+    └── get-revenue-report.use-case.ts         (receita por período, por barbeiro, por serviço)
+
+
+
+
+Resumo dos 15 use-cases:
+Entidade      Use Case            Descrição
+Appointments  list-all            Todos agendamentos com filtros
+Appointments  get                 Detalhe de 1 agendamento
+Appointments  cancel              Cancelar agendamento
+Users         list                Todos usuários com filtros
+Users         get                 Detalhe de 1 usuário
+Users         change-role         Mudar role (customer→barber→admin)
+Services      list                Todos serviços (ativos + inativos)
+Services      get                 Detalhe de 1 serviço
+Services      create              Criar novo serviço
+Services      update              Editar serviço
+Services      delete              Soft delete serviço
+Reports       summary             Resumo geral do negócio
+Reports       barber-performance  Performance por barbeiro
+Reports       revenue             Receita por período/barbeiro/serviço

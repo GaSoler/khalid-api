@@ -1,0 +1,29 @@
+services:
+  api:
+    build:
+      context: .
+      target: builder        # usa build stage com tsx para dev
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - ./src:/app/src:ro    # hot reload via tsx watch
+    restart: unless-stopped
+
+  db:
+    image: postgres:15
+    container_name: khalid-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: khalid
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

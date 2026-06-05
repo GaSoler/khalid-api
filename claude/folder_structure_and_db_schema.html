@@ -1,0 +1,154 @@
+
+<style>
+  .tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .tab { padding:6px 16px; border-radius:6px; cursor:pointer; font-size:13px; border:1px solid var(--color-border-secondary); background:transparent; color:var(--color-text-secondary); }
+  .tab.active { background:var(--color-background-secondary); color:var(--color-text-primary); font-weight:500; }
+  .panel { display:none; }
+  .panel.active { display:block; }
+  pre { background:var(--color-background-secondary); border-radius:8px; padding:16px; font-size:12px; line-height:1.7; overflow-x:auto; margin:0; color:var(--color-text-primary); border:1px solid var(--color-border-tertiary); }
+  .kw { color: #7F77DD; }
+  .cm { color: var(--color-text-tertiary); }
+  .str { color: #1D9E75; }
+  .ty { color: #D85A30; }
+</style>
+
+<div style="padding:16px 0 0">
+  <div class="tabs">
+    <button class="tab active" onclick="show('folders')">Estrutura de pastas</button>
+    <button class="tab" onclick="show('schema')">Schema SQL</button>
+    <button class="tab" onclick="show('roles')">Matriz de roles</button>
+  </div>
+
+  <div id="folders" class="panel active">
+<pre>
+src/
+├── <span class="kw">config/</span>
+│   ├── env.ts            <span class="cm"># zod parse de process.env</span>
+│   └── supabase.ts       <span class="cm"># supabase client singleton</span>
+│
+├── <span class="kw">plugins/</span>            <span class="cm"># fastify plugins registrados</span>
+│   ├── cors.ts
+│   ├── rateLimit.ts
+│   ├── helmet.ts
+│   ├── errorHandler.ts   <span class="cm"># handler global + mapeamento HTTP codes</span>
+│   └── jwt.ts            <span class="cm"># verifyJWT hook reutilizável</span>
+│
+├── <span class="kw">modules/</span>            <span class="cm"># feature-first, não layer-first</span>
+│   ├── auth/
+│   │   ├── auth.routes.ts
+│   │   ├── auth.service.ts
+│   │   └── auth.schema.ts  <span class="cm"># zod schemas de I/O</span>
+│   ├── users/
+│   │   ├── users.routes.ts
+│   │   ├── users.service.ts
+│   │   ├── users.repository.ts
+│   │   └── users.schema.ts
+│   ├── appointments/
+│   │   ├── appointments.routes.ts
+│   │   ├── appointments.service.ts  <span class="cm"># valida conflito de horário</span>
+│   │   ├── appointments.repository.ts
+│   │   └── appointments.schema.ts
+│   ├── services/           <span class="cm"># serviços oferecidos (corte, barba...)</span>
+│   │   └── ...
+│   └── admin/
+│       ├── admin.routes.ts
+│       └── admin.service.ts
+│
+├── <span class="kw">middlewares/</span>
+│   ├── authenticate.ts     <span class="cm"># extrai e valida JWT do Supabase</span>
+│   └── requireRole.ts      <span class="cm"># factory: requireRole('admin')</span>
+│
+├── <span class="kw">utils/</span>
+│   ├── AppError.ts         <span class="cm"># classe de erro customizado</span>
+│   └── paginate.ts
+│
+├── app.ts                  <span class="cm"># monta fastify + plugins + rotas</span>
+└── server.ts               <span class="cm"># listen() apenas</span>
+</pre>
+  </div>
+
+  <div id="schema" class="panel">
+<pre>
+<span class="cm">-- Enum de roles (uma por usuário)</span>
+<span class="kw">CREATE TYPE</span> user_role <span class="kw">AS ENUM</span> (<span class="str">'customer'</span>, <span class="str">'barber'</span>, <span class="str">'admin'</span>);
+
+<span class="cm">-- Espelha auth.users do Supabase, adiciona role</span>
+<span class="kw">CREATE TABLE</span> users (
+  id          <span class="ty">uuid</span> <span class="kw">PRIMARY KEY REFERENCES</span> auth.users(id),
+  email       <span class="ty">text</span> <span class="kw">UNIQUE NOT NULL</span>,
+  full_name   <span class="ty">text</span>,
+  avatar_url  <span class="ty">text</span>,
+  role        user_role <span class="kw">NOT NULL DEFAULT</span> <span class="str">'customer'</span>,
+  created_at  <span class="ty">timestamptz</span> <span class="kw">DEFAULT</span> now()
+);
+
+<span class="cm">-- Serviços oferecidos pela barbearia</span>
+<span class="kw">CREATE TABLE</span> services (
+  id           <span class="ty">uuid</span> <span class="kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  name         <span class="ty">text</span> <span class="kw">NOT NULL</span>,
+  description  <span class="ty">text</span>,
+  duration_min <span class="ty">int</span> <span class="kw">NOT NULL</span>,
+  price_cents  <span class="ty">int</span> <span class="kw">NOT NULL</span>,
+  active       <span class="ty">boolean</span> <span class="kw">DEFAULT</span> true
+);
+
+<span class="cm">-- Disponibilidade do barbeiro (dias/horários)</span>
+<span class="kw">CREATE TABLE</span> barber_availability (
+  id          <span class="ty">uuid</span> <span class="kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  barber_id   <span class="ty">uuid</span> <span class="kw">REFERENCES</span> users(id),
+  weekday     <span class="ty">int</span>,   <span class="cm">-- 0=dom ... 6=sáb</span>
+  start_time  <span class="ty">time</span> <span class="kw">NOT NULL</span>,
+  end_time    <span class="ty">time</span> <span class="kw">NOT NULL</span>
+);
+
+<span class="cm">-- Agendamentos</span>
+<span class="kw">CREATE TABLE</span> appointments (
+  id           <span class="ty">uuid</span> <span class="kw">PRIMARY KEY DEFAULT</span> gen_random_uuid(),
+  customer_id  <span class="ty">uuid</span> <span class="kw">REFERENCES</span> users(id),
+  barber_id    <span class="ty">uuid</span> <span class="kw">REFERENCES</span> users(id),
+  service_id   <span class="ty">uuid</span> <span class="kw">REFERENCES</span> services(id),
+  starts_at    <span class="ty">timestamptz</span> <span class="kw">NOT NULL</span>,
+  ends_at      <span class="ty">timestamptz</span> <span class="kw">NOT NULL</span>,
+  status       <span class="ty">text</span> <span class="kw">DEFAULT</span> <span class="str">'pending'</span>,
+  notes        <span class="ty">text</span>,
+  created_at   <span class="ty">timestamptz</span> <span class="kw">DEFAULT</span> now(),
+  <span class="cm">-- Garante que o barbeiro não tem dois agendamentos sobrepostos</span>
+  <span class="kw">CONSTRAINT</span> no_overlap <span class="kw">EXCLUDE USING</span> gist (
+    barber_id <span class="kw">WITH</span> =,
+    tstzrange(starts_at, ends_at) <span class="kw">WITH</span> &&
+  )
+);
+</pre>
+  </div>
+
+  <div id="roles" class="panel">
+<pre>
+Rota                              customer  barber  admin
+─────────────────────────────────────────────────────────
+GET  /services                      ✓         ✓       ✓
+GET  /appointments (próprios)        ✓         ✓       ✓
+POST /appointments                   ✓         —       ✓
+PUT  /appointments/:id/cancel        ✓*        ✓*      ✓
+
+GET  /barbers                        ✓         ✓       ✓
+GET  /barbers/:id/availability       ✓         ✓       ✓
+PUT  /barbers/:id/availability       —         ✓       ✓
+
+GET  /admin/users                    —         —       ✓
+PUT  /admin/users/:id/role           —         —       ✓
+POST /admin/services                 —         —       ✓
+GET  /admin/reports                  —         —       ✓
+
+* somente os próprios agendamentos, verificado no service layer
+</pre>
+  </div>
+</div>
+
+<script>
+function show(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>

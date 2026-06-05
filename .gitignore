@@ -1,0 +1,25 @@
+node_modules/
+dist/
+
+# Env — nunca commita valores reais
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+
+# TypeScript
+*.tsbuildinfo

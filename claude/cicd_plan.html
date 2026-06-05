@@ -1,0 +1,179 @@
+
+<style>
+.section { margin-bottom: 1.5rem; }
+.section-title { font-size: 13px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 10px; }
+.grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+.card { background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); border-radius: var(--border-radius-md); padding: 12px 14px; }
+.card-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 6px; }
+.card-body { font-size: 12px; color: var(--color-text-secondary); line-height: 1.6; }
+.tag { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 4px; font-weight: 500; margin-right: 4px; margin-bottom: 3px; }
+.tag-blue { background: var(--color-background-info); color: var(--color-text-info); }
+.tag-green { background: var(--color-background-success); color: var(--color-text-success); }
+.tag-amber { background: var(--color-background-warning); color: var(--color-text-warning); }
+.tag-red { background: var(--color-background-danger); color: var(--color-text-danger); }
+.divider { border: none; border-top: 0.5px solid var(--color-border-tertiary); margin: 1.25rem 0; }
+.file-row { font-size: 12px; color: var(--color-text-secondary); padding: 3px 0; font-family: var(--font-mono); }
+.file-row span { color: var(--color-text-tertiary); font-size: 11px; font-family: var(--font-sans); margin-left: 8px; }
+.pipeline-step { display: flex; align-items: flex-start; gap: 10px; padding: 8px 0; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.pipeline-step:last-child { border-bottom: none; }
+.step-badge { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 500; flex-shrink: 0; margin-top: 1px; }
+.step-content { flex: 1; }
+.step-name { font-size: 13px; font-weight: 500; color: var(--color-text-primary); }
+.step-detail { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+</style>
+
+<div style="padding: 1rem 0">
+
+<div class="section">
+  <div class="section-title">Ambientes</div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">development</div>
+      <div class="card-body">
+        Node direto + Docker Compose<br>
+        <span class="tag tag-blue">.env.local</span>
+        <span class="tag tag-blue">Supabase dev</span><br>
+        hot-reload via tsx watch
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">production</div>
+      <div class="card-body">
+        Container Docker na plataforma<br>
+        <span class="tag tag-green">.env secrets</span>
+        <span class="tag tag-green">Supabase prod</span><br>
+        deploy via GitHub Actions
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <div class="section-title">Arquivos que vou criar</div>
+  <div class="grid">
+    <div class="card">
+      <div class="card-title">Docker</div>
+      <div class="card-body">
+        <div class="file-row">Dockerfile <span>multi-stage, prod mínimo</span></div>
+        <div class="file-row">.dockerignore <span>exclui node_modules, dist</span></div>
+        <div class="file-row">docker-compose.yml <span>dev local com hot-reload</span></div>
+        <div class="file-row">docker-compose.prod.yml <span>simula produção local</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">GitHub Actions</div>
+      <div class="card-body">
+        <div class="file-row">.github/workflows/ci.yml <span>CI em todo PR</span></div>
+        <div class="file-row">.github/workflows/cd.yml <span>deploy no push da main</span></div>
+        <div class="file-row">.github/workflows/pr-check.yml <span>checks rápidos</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Environments</div>
+      <div class="card-body">
+        <div class="file-row">.env.example <span>contrato de variáveis</span></div>
+        <div class="file-row">.env.local <span>dev local (gitignored)</span></div>
+        <div class="file-row">src/config/env.ts <span>Zod parse + fail-fast</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Qualidade</div>
+      <div class="card-body">
+        <div class="file-row">eslint.config.ts <span>flat config, strict</span></div>
+        <div class="file-row">.prettierrc <span>formatação consistente</span></div>
+        <div class="file-row">vitest.config.ts <span>testes unit + integration</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <div class="section-title">Pipeline CI/CD — push na main</div>
+  <div class="card">
+    <div class="pipeline-step">
+      <div class="step-badge" style="background:var(--color-background-info);color:var(--color-text-info)">1</div>
+      <div class="step-content">
+        <div class="step-name">Lint + Typecheck</div>
+        <div class="step-detail">eslint + tsc --noEmit — falha rápida, não precisa buildar</div>
+      </div>
+    </div>
+    <div class="pipeline-step">
+      <div class="step-badge" style="background:var(--color-background-info);color:var(--color-text-info)">2</div>
+      <div class="step-content">
+        <div class="step-name">Testes</div>
+        <div class="step-detail">vitest run — unit tests das use cases + integration tests das rotas</div>
+      </div>
+    </div>
+    <div class="pipeline-step">
+      <div class="step-badge" style="background:var(--color-background-info);color:var(--color-text-info)">3</div>
+      <div class="step-content">
+        <div class="step-name">Build Docker</div>
+        <div class="step-detail">docker build multi-stage — só se lint e testes passarem</div>
+      </div>
+    </div>
+    <div class="pipeline-step">
+      <div class="step-badge" style="background:var(--color-background-success);color:var(--color-text-success)">4</div>
+      <div class="step-content">
+        <div class="step-name">Deploy</div>
+        <div class="step-detail">Push para Railway/Render/VPS via secret da plataforma — agnóstico</div>
+      </div>
+    </div>
+    <div class="pipeline-step">
+      <div class="step-badge" style="background:var(--color-background-success);color:var(--color-text-success)">5</div>
+      <div class="step-content">
+        <div class="step-name">Health check</div>
+        <div class="step-detail">GET /health após deploy — rollback automático se falhar</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<div class="section">
+  <div class="section-title">Sobre Docker — vale a pena?</div>
+  <div class="grid">
+    <div class="card" style="border-color: var(--color-border-success)">
+      <div class="card-title" style="color:var(--color-text-success)">Por que sim</div>
+      <div class="card-body">
+        CI roda exatamente o que vai pra prod<br>
+        Portável entre Railway, Render, VPS, qualquer coisa<br>
+        Prisma generate garantido no build<br>
+        Sem surpresa de versão do Node entre máquinas
+      </div>
+    </div>
+    <div class="card" style="border-color: var(--color-border-warning)">
+      <div class="card-title" style="color:var(--color-text-warning)">Custo real</div>
+      <div class="card-body">
+        +2 min no tempo de CI (build da imagem)<br>
+        Mais um arquivo pra manter<br>
+        Dev local fica ~igual ao node direto com o compose
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <div class="section-title">Deploy — agnóstico por design</div>
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-title">Railway</div>
+      <div class="card-body">Detecta Dockerfile automaticamente. Zero config. Free tier generoso.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">Render</div>
+      <div class="card-body">Mesmo fluxo. Web Service + Dockerfile. Free tier com sleep.</div>
+    </div>
+    <div class="card">
+      <div class="card-title">VPS</div>
+      <div class="card-body">docker pull + docker run. SSH deploy via Actions. Mais controle.</div>
+    </div>
+  </div>
+</div>
+
+</div>
