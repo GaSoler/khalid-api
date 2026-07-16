@@ -7,7 +7,7 @@ export async function createService(
 	reply: FastifyReply,
 ) {
 	const bodySchema = z.object({
-		name: z.string().uuid(),
+		name: z.string().min(3).max(100),
 		description: z.string().optional(),
 		priceBRL: z.number().positive(),
 		durationMin: z.number().int().min(15).max(240),

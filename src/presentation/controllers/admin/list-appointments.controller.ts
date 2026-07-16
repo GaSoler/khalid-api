@@ -6,7 +6,7 @@ export async function listAppointments(
 	request: FastifyRequest,
 	reply: FastifyReply,
 ) {
-	const bodySchema = z.object({
+	const querySchema = z.object({
 		customerId: z.string().uuid().optional(),
 		barberId: z.string().uuid().optional(),
 		serviceId: z.string().uuid().optional(),
@@ -16,7 +16,7 @@ export async function listAppointments(
 	});
 
 	const { customerId, barberId, serviceId, status, from, to } =
-		bodySchema.parse(request.body);
+		querySchema.parse(request.query);
 	const useCase = listAppointmentsFactory(request.server.db);
 
 	const result = await useCase.execute({

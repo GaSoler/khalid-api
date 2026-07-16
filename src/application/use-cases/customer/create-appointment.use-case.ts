@@ -38,6 +38,19 @@ export class CreateAppointmentUseCase {
 		date,
 		time,
 	}: CreateAppointmentUseCaseRequest): Promise<CreateAppointmentUseCaseResponse> {
+		// 0. Verifica se customer já tem agendamento "scheduled"
+		const existingScheduled =
+			await this.appointmentRepository.findByCustomerIdAndStatus(
+				customerId,
+				"scheduled",
+			);
+
+		if (existingScheduled.length > 0) {
+			throw new ConflictError(
+				"Você já tem um agendamento agendado. Cancele-o antes de criar um novo.",
+			);
+		}
+
 		// 1. Verifica se o serviço existe e está ativo
 		const service = await this.serviceRepository.findById(serviceId);
 		if (!service || !service.active) {

@@ -36,7 +36,7 @@ export class GetBarberAvailableTimesUseCase {
 		date,
 		serviceDurationMin = 30,
 	}: GetBarberAvailableTimesUseCaseRequest): Promise<GetBarberAvailableTimesUseCaseResponse> {
-		const weekday = date.getDay();
+		const weekday = date.getUTCDay();
 
 		const availabilitySlots =
 			await this.barberAvailabilityRepository.findByBarberIdAndWeekday(

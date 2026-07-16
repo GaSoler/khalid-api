@@ -3,6 +3,7 @@ import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import Fastify from "fastify";
 import { db } from "./infrastructure/database";
+import { adminRoutes } from "./presentation/controllers/admin/routes";
 import { authRoutes } from "./presentation/controllers/auth/routes";
 import { barberRoutes } from "./presentation/controllers/barber/routes";
 import { customerRoutes } from "./presentation/controllers/customer/routes";
@@ -49,6 +50,7 @@ export async function buildApp() {
 	await app.register(authRoutes, { prefix: "/api/v1/auth" });
 	await app.register(customerRoutes, { prefix: "/api/v1/customer" });
 	await app.register(barberRoutes, { prefix: "/api/v1/barber" });
+	await app.register(adminRoutes, { prefix: "/api/v1/admin" });
 
 	return app;
 }

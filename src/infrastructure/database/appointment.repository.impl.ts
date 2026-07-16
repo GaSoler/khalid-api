@@ -214,4 +214,37 @@ export class AppointmentRepository implements IAppointmentRepository {
 			.where(and(...conditions))
 			.orderBy(appointments.startsAt);
 	}
+
+	async findByCustomerIdAndStatus(
+		customerId: string,
+		status: AppointmentStatus,
+	) {
+		return this.db
+			.select()
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.customerId, customerId),
+					eq(appointments.status, status),
+				),
+			)
+			.orderBy(appointments.startsAt);
+	}
+
+	async findNextByCustomerId(customerId: string) {
+		const [appointment] = await this.db
+			.select()
+			.from(appointments)
+			.where(
+				and(
+					eq(appointments.customerId, customerId),
+					eq(appointments.status, "scheduled"),
+					gte(appointments.startsAt, new Date()),
+				),
+			)
+			.orderBy(appointments.startsAt)
+			.limit(1);
+
+		return appointment || null;
+	}
 }

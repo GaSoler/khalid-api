@@ -45,4 +45,9 @@ export interface IAppointmentRepository {
 		from?: Date;
 		to?: Date;
 	}): Promise<AppointmentEntity[]>;
+	findByCustomerIdAndStatus(
+		customerId: string,
+		status: AppointmentStatus,
+	): Promise<AppointmentEntity[]>;
+	findNextByCustomerId(customerId: string): Promise<AppointmentEntity | null>;
 }
