@@ -33,7 +33,7 @@ export async function customerRoutes(app: FastifyInstance) {
 		{ preHandler: [authMiddleware] },
 		createAppointment,
 	);
-	app.delete(
+	app.post(
 		"/appointments/:appointmentId",
 		{ preHandler: [authMiddleware] },
 		cancelAppointment,

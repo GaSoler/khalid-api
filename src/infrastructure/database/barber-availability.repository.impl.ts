@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import type { IBarberAvailabilityRepository } from "@/domain/repositories/barber-availability.repository";
 import type { DB } from ".";
 import { barberAvailability } from "./schema";
@@ -21,8 +21,10 @@ export class BarberAvailabilityRepository
 			.select()
 			.from(barberAvailability)
 			.where(
-				eq(barberAvailability.barberId, barberId) &&
+				and(
+					eq(barberAvailability.barberId, barberId),
 					eq(barberAvailability.weekday, weekday),
+				),
 			)
 			.orderBy(barberAvailability.startTime);
 	}

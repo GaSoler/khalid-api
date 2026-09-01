@@ -1,4 +1,4 @@
-import type { AppointmentEntity } from "@/domain/entities/appointment.entity";
+import type { AppointmentWithRelationsDTO } from "@/domain/dtos/appointment.dto";
 import type { IAppointmentRepository } from "@/domain/repositories/appointment.repository";
 
 interface ListAppointmentsUseCaseRequest {
@@ -6,7 +6,7 @@ interface ListAppointmentsUseCaseRequest {
 }
 
 interface ListAppointmentsUseCaseResponse {
-	data: AppointmentEntity[];
+	data: AppointmentWithRelationsDTO[];
 }
 
 export class ListAppointmentsUseCase {
@@ -16,7 +16,9 @@ export class ListAppointmentsUseCase {
 		customerId,
 	}: ListAppointmentsUseCaseRequest): Promise<ListAppointmentsUseCaseResponse> {
 		const appointments =
-			await this.appointmentRepository.findAllByCustomerId(customerId);
+			await this.appointmentRepository.findAllByCustomerIdWithRelations(
+				customerId,
+			);
 
 		return { data: appointments };
 	}

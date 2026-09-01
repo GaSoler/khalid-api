@@ -1,8 +1,11 @@
 import { and, eq, gte, lt, lte, notInArray, sql } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import type { IAppointmentRepository } from "@/domain/repositories/appointment.repository";
 import type { AppointmentStatus } from "@/shared/types";
 import type { DB } from ".";
-import { appointments } from "./schema";
+import { appointments, services, users } from "./schema";
+
+const barberUsers = alias(users, "barber");
 
 export class AppointmentRepository implements IAppointmentRepository {
 	constructor(private readonly db: DB) {}
@@ -11,6 +14,43 @@ export class AppointmentRepository implements IAppointmentRepository {
 		return this.db
 			.select()
 			.from(appointments)
+			.where(eq(appointments.customerId, customerId));
+	}
+
+	async findAllByCustomerIdWithRelations(customerId: string) {
+		return this.db
+			.select({
+				id: appointments.id,
+				customer: {
+					id: users.id,
+					email: users.email,
+					fullName: users.fullName,
+					avatarUrl: users.avatarUrl,
+				},
+				barber: {
+					id: barberUsers.id,
+					email: barberUsers.email,
+					fullName: barberUsers.fullName,
+					avatarUrl: barberUsers.avatarUrl,
+				},
+				service: {
+					id: services.id,
+					name: services.name,
+					description: services.description,
+					durationMin: services.durationMin,
+					priceCents: services.priceCents,
+					active: services.active,
+				},
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				status: appointments.status,
+				notes: appointments.notes,
+				calendarEventId: appointments.calendarEventId,
+			})
+			.from(appointments)
+			.innerJoin(users, eq(appointments.customerId, users.id))
+			.innerJoin(barberUsers, eq(appointments.barberId, barberUsers.id))
+			.innerJoin(services, eq(appointments.serviceId, services.id))
 			.where(eq(appointments.customerId, customerId));
 	}
 
@@ -28,6 +68,45 @@ export class AppointmentRepository implements IAppointmentRepository {
 			.where(eq(appointments.id, id));
 
 		return appointment || null;
+	}
+
+	async findByIdWithRelations(id: string) {
+		const [result] = await this.db
+			.select({
+				id: appointments.id,
+				customer: {
+					id: users.id,
+					email: users.email,
+					fullName: users.fullName,
+					avatarUrl: users.avatarUrl,
+				},
+				barber: {
+					id: barberUsers.id,
+					email: barberUsers.email,
+					fullName: barberUsers.fullName,
+					avatarUrl: barberUsers.avatarUrl,
+				},
+				service: {
+					id: services.id,
+					name: services.name,
+					description: services.description,
+					durationMin: services.durationMin,
+					priceCents: services.priceCents,
+					active: services.active,
+				},
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				status: appointments.status,
+				notes: appointments.notes,
+				calendarEventId: appointments.calendarEventId,
+			})
+			.from(appointments)
+			.innerJoin(users, eq(appointments.customerId, users.id))
+			.innerJoin(barberUsers, eq(appointments.barberId, barberUsers.id))
+			.innerJoin(services, eq(appointments.serviceId, services.id))
+			.where(eq(appointments.id, id));
+
+		return result || null;
 	}
 
 	async create(data: {
@@ -233,8 +312,38 @@ export class AppointmentRepository implements IAppointmentRepository {
 
 	async findNextByCustomerId(customerId: string) {
 		const [appointment] = await this.db
-			.select()
+			.select({
+				id: appointments.id,
+				customer: {
+					id: users.id,
+					email: users.email,
+					fullName: users.fullName,
+					avatarUrl: users.avatarUrl,
+				},
+				barber: {
+					id: barberUsers.id,
+					email: barberUsers.email,
+					fullName: barberUsers.fullName,
+					avatarUrl: barberUsers.avatarUrl,
+				},
+				service: {
+					id: services.id,
+					name: services.name,
+					description: services.description,
+					durationMin: services.durationMin,
+					priceCents: services.priceCents,
+					active: services.active,
+				},
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				status: appointments.status,
+				notes: appointments.notes,
+				calendarEventId: appointments.calendarEventId,
+			})
 			.from(appointments)
+			.innerJoin(users, eq(appointments.customerId, users.id))
+			.innerJoin(barberUsers, eq(appointments.barberId, barberUsers.id))
+			.innerJoin(services, eq(appointments.serviceId, services.id))
 			.where(
 				and(
 					eq(appointments.customerId, customerId),

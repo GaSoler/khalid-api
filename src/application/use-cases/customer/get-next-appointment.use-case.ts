@@ -1,4 +1,4 @@
-import type { AppointmentEntity } from "@/domain/entities/appointment.entity";
+import type { AppointmentWithRelationsDTO } from "@/domain/dtos/appointment.dto";
 import type { IAppointmentRepository } from "@/domain/repositories/appointment.repository";
 
 interface GetNextAppointmentUseCaseRequest {
@@ -6,7 +6,7 @@ interface GetNextAppointmentUseCaseRequest {
 }
 
 interface GetNextAppointmentUseCaseResponse {
-	data: AppointmentEntity | null;
+	data: AppointmentWithRelationsDTO | null;
 }
 
 export class GetNextAppointmentUseCase {

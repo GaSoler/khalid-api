@@ -1,10 +1,17 @@
 import type { AppointmentStatus } from "@/shared/types";
+import type { AppointmentWithRelationsDTO } from "../dtos/appointment.dto";
 import type { AppointmentEntity } from "../entities/appointment.entity";
 
 export interface IAppointmentRepository {
 	findAllByCustomerId: (customerId: string) => Promise<AppointmentEntity[]>;
+	findAllByCustomerIdWithRelations: (
+		customerId: string,
+	) => Promise<AppointmentWithRelationsDTO[]>;
 	findAllByBarberId: (barberId: string) => Promise<AppointmentEntity[]>;
 	findById: (id: string) => Promise<AppointmentEntity | null>;
+	findByIdWithRelations: (
+		id: string,
+	) => Promise<AppointmentWithRelationsDTO | null>;
 	create: (data: {
 		customerId: string;
 		barberId: string;
@@ -49,5 +56,7 @@ export interface IAppointmentRepository {
 		customerId: string,
 		status: AppointmentStatus,
 	): Promise<AppointmentEntity[]>;
-	findNextByCustomerId(customerId: string): Promise<AppointmentEntity | null>;
+	findNextByCustomerId(
+		customerId: string,
+	): Promise<AppointmentWithRelationsDTO | null>;
 }

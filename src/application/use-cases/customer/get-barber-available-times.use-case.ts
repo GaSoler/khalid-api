@@ -1,3 +1,7 @@
+import type {
+	AvailableTimesDTO,
+	TimeSlot,
+} from "@/domain/dtos/available-times.dto";
 import type { IAppointmentRepository } from "@/domain/repositories/appointment.repository";
 import type { IBarberAvailabilityRepository } from "@/domain/repositories/barber-availability.repository";
 import { isSlotOccupied, minutesToTime, timeToMinutes } from "@/shared/utils";
@@ -8,21 +12,8 @@ interface GetBarberAvailableTimesUseCaseRequest {
 	serviceDurationMin?: number;
 }
 
-interface TimeSlot {
-	time: string;
-	isAvailable: boolean;
-}
-
-// interface GetBarberAvailableTimesUseCaseResponse {
-// 	data: { timeSlots: TimeSlot[] };
-// }
-
 interface GetBarberAvailableTimesUseCaseResponse {
-	data: {
-		timeSlots: TimeSlot[];
-		date: string;
-		barberId: string;
-	};
+	data: AvailableTimesDTO;
 }
 
 export class GetBarberAvailableTimesUseCase {
@@ -43,6 +34,8 @@ export class GetBarberAvailableTimesUseCase {
 				barberId,
 				weekday,
 			);
+
+		console.log(availabilitySlots);
 
 		if (availabilitySlots.length === 0) {
 			return {
