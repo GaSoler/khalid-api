@@ -1,4 +1,4 @@
-import type { AppointmentEntity } from "@/domain/entities/appointment.entity";
+import type { AppointmentWithRelationsDTO } from "@/domain/dtos/appointment.dto";
 import type { IAppointmentRepository } from "@/domain/repositories/appointment.repository";
 import type { AppointmentStatus } from "@/shared/types";
 
@@ -10,7 +10,7 @@ interface ListAppointmentsUseCaseRequest {
 }
 
 interface ListAppointmentsUseCaseResponse {
-	data: AppointmentEntity[];
+	data: AppointmentWithRelationsDTO[];
 }
 
 export class ListAppointmentsUseCase {
@@ -53,11 +53,14 @@ export class ListAppointmentsUseCase {
 			);
 		}
 		const appointments =
-			await this.appointmentRepository.findByBarberIdWithFilters(barberId, {
-				status,
-				from: adjustedFrom,
-				to: adjustedTo,
-			});
+			await this.appointmentRepository.findByBarberIdWithFiltersAndRelations(
+				barberId,
+				{
+					status,
+					from: adjustedFrom,
+					to: adjustedTo,
+				},
+			);
 
 		return { data: appointments };
 	}

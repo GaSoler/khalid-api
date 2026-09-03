@@ -1,4 +1,4 @@
-import { toUserDTO, type UserDTO } from "@/domain/dtos/user.dto copy";
+import { toUserDTO, type UserDTO } from "@/domain/dtos/user.dto";
 import type { UserEntity } from "@/domain/entities/user.entity";
 import type { IUserRepository } from "@/domain/repositories/user.repository";
 import type { PaginatedResult, PaginationParams } from "@/shared/types";

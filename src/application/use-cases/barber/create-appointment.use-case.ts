@@ -38,10 +38,23 @@ export class CreateAppointmentUseCase {
 		date,
 		time,
 	}: CreateAppointmentUseCaseRequest): Promise<CreateAppointmentUseCaseResponse> {
+		// 0. Verifica se customer já tem agendamento "scheduled"
+		const existingScheduled =
+			await this.appointmentRepository.findByCustomerIdAndStatus(
+				customerId,
+				"scheduled",
+			);
+
+		if (existingScheduled.length > 0) {
+			throw new ConflictError(
+				"Cliente já tem um agendamento ativo. Cancele-o antes de criar um novo.",
+			);
+		}
+
 		// 1. Verifica se o serviço existe e está ativo
 		const service = await this.serviceRepository.findById(serviceId);
 		if (!service || !service.active) {
-			throw new NotFoundError("Service");
+			throw new NotFoundError("Serviço não encontrado.");
 		}
 
 		// 2. Verifica disponibilidade do barbeiro no dia (múltiplos slots)
@@ -53,7 +66,7 @@ export class CreateAppointmentUseCase {
 			);
 
 		if (availabilitySlots.length === 0) {
-			throw new ConflictError("Barbeiro não atende neste dia");
+			throw new ConflictError("Barbeiro não atende neste dia.");
 		}
 
 		// 3. Verifica se o horário está dentro de ALGUM slot disponível
@@ -71,7 +84,7 @@ export class CreateAppointmentUseCase {
 			const times = availabilitySlots
 				.map((s) => `${s.startTime}-${s.endTime}`)
 				.join(" ou ");
-			throw new ConflictError(`Barbeiro atende: ${times}`);
+			throw new ConflictError(`Barbeiro atende: ${times}.`);
 		}
 
 		// 4. Verifica se o slot está ocupado
@@ -86,7 +99,7 @@ export class CreateAppointmentUseCase {
 			appointments,
 		);
 		if (occupied) {
-			throw new ConflictError("Horário indisponível");
+			throw new ConflictError("Horário indisponível.");
 		}
 
 		// 5. Cria o agendamento

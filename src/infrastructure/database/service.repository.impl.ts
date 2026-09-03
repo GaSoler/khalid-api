@@ -21,12 +21,10 @@ export class ServiceRepository implements IServiceRepository {
 
 		const conditions = [];
 
-		// Active filter
 		if (filters?.active !== undefined) {
 			conditions.push(eq(services.active, filters.active));
 		}
 
-		// Search filter (nome ou description)
 		if (filters?.search) {
 			conditions.push(
 				or(
@@ -36,7 +34,6 @@ export class ServiceRepository implements IServiceRepository {
 			);
 		}
 
-		// Price range filter (em centavos)
 		if (filters?.priceRange) {
 			const minCents = Math.round(filters.priceRange.min * 100);
 			const maxCents = Math.round(filters.priceRange.max * 100);
@@ -48,7 +45,6 @@ export class ServiceRepository implements IServiceRepository {
 			);
 		}
 
-		// Duration range filter
 		if (filters?.durationRange) {
 			conditions.push(
 				and(

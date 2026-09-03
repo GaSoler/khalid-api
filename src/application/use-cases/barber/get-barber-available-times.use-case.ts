@@ -13,10 +13,6 @@ interface TimeSlot {
 	isAvailable: boolean;
 }
 
-// interface GetBarberAvailableTimesUseCaseResponse {
-// 	data: { timeSlots: TimeSlot[] };
-// }
-
 interface GetBarberAvailableTimesUseCaseResponse {
 	data: {
 		timeSlots: TimeSlot[];

@@ -1,4 +1,7 @@
-import type { BarberAvailabilityEntity } from "@/domain/entities/barber-availability.entity";
+import {
+	type BarberAvailabilityDTO,
+	toBarberAvailabilityDTO,
+} from "@/domain/dtos/barber-availability.dto";
 import type { IBarberAvailabilityRepository } from "@/domain/repositories/barber-availability.repository";
 
 interface GetAvailabilityUseCaseRequest {
@@ -6,7 +9,7 @@ interface GetAvailabilityUseCaseRequest {
 }
 
 interface GetAvailabilityUseCaseResponse {
-	data: BarberAvailabilityEntity[];
+	data: BarberAvailabilityDTO[];
 }
 
 export class GetAvailabilityUseCase {
@@ -20,6 +23,6 @@ export class GetAvailabilityUseCase {
 		const availability =
 			await this.barberAvailabilityRepository.findAllByBarberId(barberId);
 
-		return { data: availability };
+		return { data: availability.map(toBarberAvailabilityDTO) };
 	}
 }

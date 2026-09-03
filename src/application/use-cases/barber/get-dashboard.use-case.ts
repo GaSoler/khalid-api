@@ -1,3 +1,4 @@
+import type { AppointmentWithRelationsDTO } from "@/domain/dtos/appointment.dto";
 import type { IAppointmentRepository } from "@/domain/repositories/appointment.repository";
 
 interface GetDashboardUseCaseRequest {
@@ -6,20 +7,10 @@ interface GetDashboardUseCaseRequest {
 
 interface GetDashboardUseCaseResponse {
 	data: {
-		nextAppointment: {
-			id: string;
-			customerName: string | null;
-			serviceName: string;
-			startsAt: Date;
-			endsAt: Date;
-		} | null;
+		nextAppointment: AppointmentWithRelationsDTO | null;
 		appointmentsToday: number;
 		appointmentsThisWeek: number;
 		totalClientsServed: number;
-		hoursOpenToday: {
-			start: string;
-			end: string;
-		} | null;
 	};
 }
 
@@ -60,25 +51,12 @@ export class GetDashboardUseCase {
 		const totalClientsServed =
 			await this.appointmentRepository.countUniqueCustomersByBarber(barberId);
 
-		// Horário de abertura hoje (weekday 0-6)
-		// Isso seria buscado da availability, mas vou deixar como null por enquanto
-		// porque precisa passar o availability também
-
 		return {
 			data: {
-				nextAppointment: nextAppointment
-					? {
-							id: nextAppointment.id,
-							customerName: (nextAppointment as any).customer?.fullName || null,
-							serviceName: (nextAppointment as any).service?.name || "",
-							startsAt: nextAppointment.startsAt,
-							endsAt: nextAppointment.endsAt,
-						}
-					: null,
+				nextAppointment: nextAppointment ? nextAppointment : null,
 				appointmentsToday,
 				appointmentsThisWeek,
 				totalClientsServed,
-				hoursOpenToday: null, // Implementar depois se necessário
 			},
 		};
 	}

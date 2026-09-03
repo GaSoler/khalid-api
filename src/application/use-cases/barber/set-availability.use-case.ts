@@ -1,11 +1,11 @@
-// src/application/use-cases/barber/set-barber-availability.use-case.ts
 import type { BarberAvailabilityEntity } from "@/domain/entities/barber-availability.entity";
 import type { IBarberAvailabilityRepository } from "@/domain/repositories/barber-availability.repository";
-import { ConflictError } from "@/shared/errors";
+import { ConflictError, ValidationError } from "@/shared/errors";
+import { timeToMinutes } from "@/shared/utils";
 
 interface SetAvailabilityUseCaseRequest {
 	barberId: string;
-	slots: {
+	availabilities: {
 		weekday: number;
 		startTime: string;
 		endTime: string;
@@ -23,22 +23,44 @@ export class SetAvailabilityUseCase {
 
 	async execute({
 		barberId,
-		slots,
+		availabilities,
 	}: SetAvailabilityUseCaseRequest): Promise<SetAvailabilityUseCaseResponse> {
 		// Valida slots
-		for (const slot of slots) {
-			if (slot.weekday < 0 || slot.weekday > 6) {
-				throw new ConflictError("Weekday deve estar entre 0-6");
+		availabilities.forEach((availability, index) => {
+			const startMinutes = timeToMinutes(availability.startTime);
+			const endMinutes = timeToMinutes(availability.endTime);
+
+			if (startMinutes >= endMinutes) {
+				throw new ValidationError(
+					`Slot ${index + 1}: Horário de início (${availability.startTime}) deve ser menor que horário de fim (${availability.endTime})`,
+				);
 			}
 
-			if (slot.endTime <= slot.startTime) {
-				throw new ConflictError("End time deve ser maior que start time");
-			}
-		}
+			// 2. Valida se não há sobreposição com outros slots do mesmo dia
+			availabilities.forEach((other, otherIndex) => {
+				if (index === otherIndex) return; // Não comparar com ele mesmo
+
+				if (availability.weekday === other.weekday) {
+					const otherStartMinutes = timeToMinutes(other.startTime);
+					const otherEndMinutes = timeToMinutes(other.endTime);
+
+					// Verifica overlap
+					if (
+						!(
+							endMinutes <= otherStartMinutes || startMinutes >= otherEndMinutes
+						)
+					) {
+						throw new ConflictError(
+							`Slots do dia ${availability.weekday} se sobrepõem: ${availability.startTime}-${availability.endTime} e ${other.startTime}-${other.endTime}`,
+						);
+					}
+				}
+			});
+		});
 
 		const availability = await this.barberAvailabilityRepository.replaceAll(
 			barberId,
-			slots,
+			availabilities,
 		);
 
 		return { data: availability };

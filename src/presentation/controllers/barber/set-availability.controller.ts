@@ -15,12 +15,12 @@ export async function setAvailability(
 		}),
 	);
 
-	const slots = bodySchema.parse(request.body);
+	const availabilities = bodySchema.parse(request.body);
 	const barberId = request.user.id;
 
 	const useCase = setAvailabilityFactory(request.server.db);
 
-	const result = await useCase.execute({ barberId, slots });
+	const result = await useCase.execute({ barberId, availabilities });
 
 	return reply.status(200).send(result);
 }

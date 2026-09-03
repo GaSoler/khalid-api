@@ -1,4 +1,4 @@
-import { and, eq, gte, lt, lte, notInArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lt, lte, notInArray, sql } from "drizzle-orm";
 import { alias } from "drizzle-orm/pg-core";
 import type { IAppointmentRepository } from "@/domain/repositories/appointment.repository";
 import type { AppointmentStatus } from "@/shared/types";
@@ -51,7 +51,8 @@ export class AppointmentRepository implements IAppointmentRepository {
 			.innerJoin(users, eq(appointments.customerId, users.id))
 			.innerJoin(barberUsers, eq(appointments.barberId, barberUsers.id))
 			.innerJoin(services, eq(appointments.serviceId, services.id))
-			.where(eq(appointments.customerId, customerId));
+			.where(eq(appointments.customerId, customerId))
+			.orderBy(desc(appointments.startsAt));
 	}
 
 	async findAllByBarberId(barberId: string) {
@@ -144,6 +145,50 @@ export class AppointmentRepository implements IAppointmentRepository {
 		return appointment;
 	}
 
+	async updateWithRelations(id: string, status: AppointmentStatus) {
+		await this.db
+			.update(appointments)
+			.set({ status })
+			.where(eq(appointments.id, id));
+
+		const [appointment] = await this.db
+			.select({
+				id: appointments.id,
+				customer: {
+					id: users.id,
+					email: users.email,
+					fullName: users.fullName,
+					avatarUrl: users.avatarUrl,
+				},
+				barber: {
+					id: barberUsers.id,
+					email: barberUsers.email,
+					fullName: barberUsers.fullName,
+					avatarUrl: barberUsers.avatarUrl,
+				},
+				service: {
+					id: services.id,
+					name: services.name,
+					description: services.description,
+					durationMin: services.durationMin,
+					priceCents: services.priceCents,
+					active: services.active,
+				},
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				status: appointments.status,
+				notes: appointments.notes,
+				calendarEventId: appointments.calendarEventId,
+			})
+			.from(appointments)
+			.innerJoin(users, eq(appointments.customerId, users.id))
+			.innerJoin(barberUsers, eq(appointments.barberId, barberUsers.id))
+			.innerJoin(services, eq(appointments.serviceId, services.id))
+			.where(eq(appointments.id, id));
+
+		return appointment;
+	}
+
 	async findByBarberIdAndDate(barberId: string, date: Date) {
 		const startOfDay = new Date(date);
 		startOfDay.setUTCHours(0, 0, 0, 0);
@@ -169,23 +214,41 @@ export class AppointmentRepository implements IAppointmentRepository {
 		const [result] = await this.db
 			.select({
 				id: appointments.id,
-				customerId: appointments.customerId,
-				barberId: appointments.barberId,
-				serviceId: appointments.serviceId,
+				customer: {
+					id: users.id,
+					email: users.email,
+					fullName: users.fullName,
+					avatarUrl: users.avatarUrl,
+				},
+				barber: {
+					id: barberUsers.id,
+					email: barberUsers.email,
+					fullName: barberUsers.fullName,
+					avatarUrl: barberUsers.avatarUrl,
+				},
+				service: {
+					id: services.id,
+					name: services.name,
+					description: services.description,
+					durationMin: services.durationMin,
+					priceCents: services.priceCents,
+					active: services.active,
+				},
 				startsAt: appointments.startsAt,
 				endsAt: appointments.endsAt,
 				status: appointments.status,
 				notes: appointments.notes,
 				calendarEventId: appointments.calendarEventId,
-				createdAt: appointments.createdAt,
-				updatedAt: appointments.updatedAt,
 			})
 			.from(appointments)
+			.innerJoin(users, eq(appointments.customerId, users.id))
+			.innerJoin(barberUsers, eq(appointments.barberId, barberUsers.id))
+			.innerJoin(services, eq(appointments.serviceId, services.id))
 			.where(
 				and(
 					eq(appointments.barberId, barberId),
 					gte(appointments.startsAt, afterDate),
-					notInArray(appointments.status, ["cancelled"]),
+					notInArray(appointments.status, ["cancelled", "completed"]),
 				),
 			)
 			.orderBy(appointments.startsAt)
@@ -251,6 +314,65 @@ export class AppointmentRepository implements IAppointmentRepository {
 			.from(appointments)
 			.where(and(...conditions))
 			.orderBy(appointments.startsAt);
+	}
+
+	async findByBarberIdWithFiltersAndRelations(
+		barberId: string,
+		filters?: {
+			status?: AppointmentStatus;
+			from?: Date;
+			to?: Date;
+		},
+	) {
+		const conditions = [eq(appointments.barberId, barberId)];
+
+		if (filters?.status) {
+			conditions.push(eq(appointments.status, filters.status));
+		}
+
+		if (filters?.from) {
+			conditions.push(gte(appointments.startsAt, filters.from));
+		}
+
+		if (filters?.to) {
+			conditions.push(lte(appointments.startsAt, filters.to));
+		}
+
+		return this.db
+			.select({
+				id: appointments.id,
+				customer: {
+					id: users.id,
+					email: users.email,
+					fullName: users.fullName,
+					avatarUrl: users.avatarUrl,
+				},
+				barber: {
+					id: barberUsers.id,
+					email: barberUsers.email,
+					fullName: barberUsers.fullName,
+					avatarUrl: barberUsers.avatarUrl,
+				},
+				service: {
+					id: services.id,
+					name: services.name,
+					description: services.description,
+					durationMin: services.durationMin,
+					priceCents: services.priceCents,
+					active: services.active,
+				},
+				startsAt: appointments.startsAt,
+				endsAt: appointments.endsAt,
+				status: appointments.status,
+				notes: appointments.notes,
+				calendarEventId: appointments.calendarEventId,
+			})
+			.from(appointments)
+			.innerJoin(users, eq(appointments.customerId, users.id))
+			.innerJoin(barberUsers, eq(appointments.barberId, barberUsers.id))
+			.innerJoin(services, eq(appointments.serviceId, services.id))
+			.where(and(...conditions))
+			.orderBy(asc(appointments.startsAt));
 	}
 
 	async findAllWithFilters(filters?: {

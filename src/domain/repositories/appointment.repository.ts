@@ -22,6 +22,10 @@ export interface IAppointmentRepository {
 		notes: string | null;
 	}) => Promise<AppointmentEntity>;
 	update: (id: string, status: AppointmentStatus) => Promise<AppointmentEntity>;
+	updateWithRelations: (
+		id: string,
+		status: AppointmentStatus,
+	) => Promise<AppointmentWithRelationsDTO>;
 	findByBarberIdAndDate: (
 		barberId: string,
 		date: Date,
@@ -29,7 +33,7 @@ export interface IAppointmentRepository {
 	findNextAppointment(
 		barberId: string,
 		afterDate: Date,
-	): Promise<AppointmentEntity | null>;
+	): Promise<AppointmentWithRelationsDTO | null>;
 	countByBarberAndDateRange(
 		barberId: string,
 		from: Date,
@@ -44,6 +48,14 @@ export interface IAppointmentRepository {
 			to?: Date;
 		},
 	): Promise<AppointmentEntity[]>;
+	findByBarberIdWithFiltersAndRelations(
+		barberId: string,
+		filters?: {
+			status?: AppointmentStatus;
+			from?: Date;
+			to?: Date;
+		},
+	): Promise<AppointmentWithRelationsDTO[]>;
 	findAllWithFilters(filters?: {
 		customerId?: string;
 		barberId?: string;

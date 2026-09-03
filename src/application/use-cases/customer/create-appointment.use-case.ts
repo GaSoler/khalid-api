@@ -47,7 +47,7 @@ export class CreateAppointmentUseCase {
 
 		if (existingScheduled.length > 0) {
 			throw new ConflictError(
-				"Você já tem um agendamento agendado. Cancele-o antes de criar um novo.",
+				"Você já tem um agendamento ativo. Cancele-o antes de criar um novo.",
 			);
 		}
 

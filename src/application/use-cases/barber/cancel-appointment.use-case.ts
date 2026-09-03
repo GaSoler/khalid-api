@@ -1,4 +1,4 @@
-import type { AppointmentEntity } from "@/domain/entities/appointment.entity";
+import type { AppointmentWithRelationsDTO } from "@/domain/dtos/appointment.dto";
 import type { IAppointmentRepository } from "@/domain/repositories/appointment.repository";
 import { ConflictError, NotFoundError } from "@/shared/errors";
 
@@ -8,7 +8,7 @@ interface CancelAppointmentUseCaseRequest {
 }
 
 interface CancelAppointmentUseCaseResponse {
-	data: AppointmentEntity;
+	data: AppointmentWithRelationsDTO;
 }
 
 export class CancelAppointmentUseCase {
@@ -19,21 +19,23 @@ export class CancelAppointmentUseCase {
 		barberId,
 	}: CancelAppointmentUseCaseRequest): Promise<CancelAppointmentUseCaseResponse> {
 		const appointment =
-			await this.appointmentRepository.findById(appointmentId);
+			await this.appointmentRepository.findByIdWithRelations(appointmentId);
 
 		if (!appointment) {
-			throw new NotFoundError("Appointment");
+			throw new NotFoundError("Agendamento não encontrado.");
 		}
 
-		if (appointment.barberId !== barberId) {
-			throw new NotFoundError("Appointment");
+		if (appointment.barber.id !== barberId) {
+			throw new ConflictError("Este agendamento pertence a outro barbeiro.");
 		}
 
-		if (appointment.status === "cancelled") {
-			throw new ConflictError("Appointment already cancelled");
+		if (appointment.status !== "scheduled") {
+			throw new ConflictError(
+				"Não é possível cancelar um agendamento que foi finalizado ou cancelado anteriormente.",
+			);
 		}
 
-		const updated = await this.appointmentRepository.update(
+		const updated = await this.appointmentRepository.updateWithRelations(
 			appointmentId,
 			"cancelled",
 		);
