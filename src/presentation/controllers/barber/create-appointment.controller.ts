@@ -9,8 +9,8 @@ export async function createAppointment(
 	const bodySchema = z.object({
 		customerId: z.string().uuid(),
 		serviceId: z.string().uuid(),
-		date: z.coerce.date(),
-		time: z.string().regex(/^\d{2}:\d{2}$/),
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // "2026-09-15"
+		time: z.string().regex(/^\d{2}:\d{2}$/), // "12:30"
 	});
 
 	const { customerId, serviceId, date, time } = bodySchema.parse(request.body);

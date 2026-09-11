@@ -8,8 +8,8 @@ interface CreateAppointmentUseCaseRequest {
 	customerId: string;
 	barberId: string;
 	serviceId: string;
-	date: Date;
-	time: string; // "HH:MM"
+	date: string;
+	time: string;
 }
 
 interface CreateAppointmentUseCaseResponse {
@@ -18,8 +18,8 @@ interface CreateAppointmentUseCaseResponse {
 		customerId: string;
 		barberId: string;
 		serviceId: string;
-		startsAt: Date;
-		endsAt: Date;
+		startsAt: string;
+		endsAt: string;
 		status: string;
 	};
 }
@@ -38,7 +38,22 @@ export class CreateAppointmentUseCase {
 		date,
 		time,
 	}: CreateAppointmentUseCaseRequest): Promise<CreateAppointmentUseCaseResponse> {
-		// 0. Verifica se customer já tem agendamento "scheduled"
+		// Parse date e time
+		const [hours, minutes] = time.split(":").map(Number);
+		const appointmentDate = new Date(date);
+
+		// 0.1 Valida se é no passado
+		const appointmentDateTime = new Date(appointmentDate);
+		appointmentDateTime.setHours(hours, minutes, 0, 0);
+
+		const now = new Date();
+		if (appointmentDateTime < now) {
+			throw new ConflictError(
+				"Não é possível agendar para data/hora no passado",
+			);
+		}
+
+		// 0.2 Verifica se customer já tem agendamento "scheduled"
 		const existingScheduled =
 			await this.appointmentRepository.findByCustomerIdAndStatus(
 				customerId,
@@ -54,11 +69,13 @@ export class CreateAppointmentUseCase {
 		// 1. Verifica se o serviço existe e está ativo
 		const service = await this.serviceRepository.findById(serviceId);
 		if (!service || !service.active) {
-			throw new NotFoundError("Serviço não encontrado.");
+			throw new NotFoundError("Serviço não encontrado");
 		}
 
-		// 2. Verifica disponibilidade do barbeiro no dia (múltiplos slots)
-		const weekday = date.getDay();
+		// 2. Extrai weekday e slot time (em horário local)
+		const weekday = appointmentDate.getDay();
+		const slotTime = hours * 60 + minutes;
+
 		const availabilitySlots =
 			await this.barberAvailabilityRepository.findByBarberIdAndWeekday(
 				barberId,
@@ -69,9 +86,7 @@ export class CreateAppointmentUseCase {
 			throw new ConflictError("Barbeiro não atende neste dia.");
 		}
 
-		// 3. Verifica se o horário está dentro de ALGUM slot disponível
-		const [hours, minutes] = time.split(":").map(Number);
-		const slotTime = hours * 60 + minutes;
+		// 3. Verifica se o horário cabe em algum slot
 		const slotDurationMinutes = service.durationMin;
 
 		const fitsInAnySlot = availabilitySlots.some((slot) => {
@@ -90,7 +105,7 @@ export class CreateAppointmentUseCase {
 		// 4. Verifica se o slot está ocupado
 		const appointments = await this.appointmentRepository.findByBarberIdAndDate(
 			barberId,
-			date,
+			appointmentDate,
 		);
 
 		const occupied = isSlotOccupiedWithDuration(
@@ -102,18 +117,19 @@ export class CreateAppointmentUseCase {
 			throw new ConflictError("Horário indisponível.");
 		}
 
-		// 5. Cria o agendamento
-		const startsAt = new Date(date);
-		startsAt.setHours(hours, minutes, 0, 0);
-		const endsAt = new Date(startsAt);
-		endsAt.setMinutes(endsAt.getMinutes() + slotDurationMinutes);
+		// 5. Converte pra UTC pra salvar (+3h pra SP→UTC)
+		const startsAtUTC = new Date(appointmentDate);
+		startsAtUTC.setUTCHours(hours + 3, minutes, 0, 0);
+
+		const endsAtUTC = new Date(startsAtUTC);
+		endsAtUTC.setUTCMinutes(endsAtUTC.getUTCMinutes() + slotDurationMinutes);
 
 		const appointment = await this.appointmentRepository.create({
 			customerId,
 			barberId,
 			serviceId,
-			startsAt,
-			endsAt,
+			startsAt: startsAtUTC,
+			endsAt: endsAtUTC,
 			status: "scheduled",
 			notes: null,
 		});
@@ -124,8 +140,8 @@ export class CreateAppointmentUseCase {
 				customerId: appointment.customerId,
 				barberId: appointment.barberId,
 				serviceId: appointment.serviceId,
-				startsAt: appointment.startsAt,
-				endsAt: appointment.endsAt,
+				startsAt: appointment.startsAt.toISOString(),
+				endsAt: appointment.endsAt.toISOString(),
 				status: appointment.status,
 			},
 		};

@@ -7,7 +7,7 @@ export async function getBarberAvailableTimes(
 	reply: FastifyReply,
 ) {
 	const querySchema = z.object({
-		date: z.coerce.date(),
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // "2026-09-15"
 	});
 
 	const { date } = querySchema.parse(request.query);

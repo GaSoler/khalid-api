@@ -1,10 +1,11 @@
+import type { AvailableTimesDTO } from "@/domain/dtos/available-times.dto";
 import type { IAppointmentRepository } from "@/domain/repositories/appointment.repository";
 import type { IBarberAvailabilityRepository } from "@/domain/repositories/barber-availability.repository";
 import { isSlotOccupied, minutesToTime, timeToMinutes } from "@/shared/utils";
 
 interface GetBarberAvailableTimesUseCaseRequest {
 	barberId: string;
-	date: Date;
+	date: string;
 	serviceDurationMin?: number;
 }
 
@@ -14,14 +15,12 @@ interface TimeSlot {
 }
 
 interface GetBarberAvailableTimesUseCaseResponse {
-	data: {
-		timeSlots: TimeSlot[];
-		date: string;
-		barberId: string;
-	};
+	data: AvailableTimesDTO;
 }
 
 export class GetBarberAvailableTimesUseCase {
+	private readonly BRAZIL_TIMEZONE_OFFSET_MINUTES = -180; // UTC-3
+
 	constructor(
 		private readonly barberAvailabilityRepository: IBarberAvailabilityRepository,
 		private readonly appointmentRepository: IAppointmentRepository,
@@ -32,7 +31,8 @@ export class GetBarberAvailableTimesUseCase {
 		date,
 		serviceDurationMin = 30,
 	}: GetBarberAvailableTimesUseCaseRequest): Promise<GetBarberAvailableTimesUseCaseResponse> {
-		const weekday = date.getDay();
+		const appointmentDate = new Date(date);
+		const weekday = appointmentDate.getDay();
 
 		const availabilitySlots =
 			await this.barberAvailabilityRepository.findByBarberIdAndWeekday(
@@ -44,7 +44,7 @@ export class GetBarberAvailableTimesUseCase {
 			return {
 				data: {
 					timeSlots: [],
-					date: date.toISOString().split("T")[0],
+					date,
 					barberId,
 				},
 			};
@@ -52,8 +52,19 @@ export class GetBarberAvailableTimesUseCase {
 
 		const appointments = await this.appointmentRepository.findByBarberIdAndDate(
 			barberId,
-			date,
+			appointmentDate,
 		);
+
+		// Verifica se é hoje (compara strings de data)
+		const now = new Date();
+		const today = now.toISOString().split("T")[0];
+		const isToday = date === today;
+
+		// Converte UTC pra São Paulo (-3h = -180 min)
+		const utcTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+		const localTimeInMinutes = isToday
+			? utcTimeInMinutes + this.BRAZIL_TIMEZONE_OFFSET_MINUTES
+			: -1;
 
 		const SLOT_DURATION = 30;
 		const timeSlots: TimeSlot[] = [];
@@ -68,11 +79,16 @@ export class GetBarberAvailableTimesUseCase {
 				time + serviceDurationMin <= end;
 				time += SLOT_DURATION
 			) {
+				// Se é hoje e horário já passou, pula
+				const hasAlreadyPassed = isToday && time < localTimeInMinutes;
+				if (hasAlreadyPassed) continue;
+
 				const occupied = isSlotOccupied(time, appointments);
+				if (occupied) continue; // Pula se ocupado
 
 				timeSlots.push({
 					time: minutesToTime(time),
-					isAvailable: !occupied,
+					isAvailable: true,
 				});
 			}
 		}
@@ -80,7 +96,7 @@ export class GetBarberAvailableTimesUseCase {
 		return {
 			data: {
 				timeSlots,
-				date: date.toISOString().split("T")[0],
+				date,
 				barberId,
 			},
 		};

@@ -11,7 +11,7 @@ export async function getBarberAvailableTimes(
 	});
 
 	const querySchema = z.object({
-		date: z.coerce.date(),
+		date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/), // "2026-09-15"
 	});
 
 	const { barberId } = paramsSchema.parse(request.params);
