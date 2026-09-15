@@ -29,7 +29,8 @@ export class GetBarberAvailableTimesUseCase {
 		date,
 		serviceDurationMin = 30,
 	}: GetBarberAvailableTimesUseCaseRequest): Promise<GetBarberAvailableTimesUseCaseResponse> {
-		const appointmentDate = new Date(date);
+		const [year, month, day] = date.split("-").map(Number);
+		const appointmentDate = new Date(year, month - 1, day);
 		const weekday = appointmentDate.getDay();
 
 		const availabilitySlots =
@@ -59,7 +60,7 @@ export class GetBarberAvailableTimesUseCase {
 		const isToday = date === today;
 
 		// Converte UTC pra São Paulo (-3h = -180 min)
-		const utcTimeInMinutes = now.getHours() * 60 + now.getMinutes();
+		const utcTimeInMinutes = now.getUTCHours() * 60 + now.getUTCMinutes();
 		const localTimeInMinutes = isToday
 			? utcTimeInMinutes + this.BRAZIL_TIMEZONE_OFFSET_MINUTES
 			: -1;

@@ -1,4 +1,3 @@
-// src/presentation/controllers/barber/get-barber-dashboard.controller.ts
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { getDashboardFactory } from "@/application/use-cases/barber/factories/get-dashboard.factory";
 

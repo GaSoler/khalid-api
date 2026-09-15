@@ -14,7 +14,7 @@ export async function customerRoutes(app: FastifyInstance) {
 	app.get("/barbers", { preHandler: [authMiddleware] }, listActiveBarbers);
 	app.get(
 		"/barbers/:barberId/available-times",
-		{ preHandler: [authMiddleware] },
+		// { preHandler: [authMiddleware] },
 		getBarberAvailableTimes,
 	);
 	app.get("/appointments", { preHandler: [authMiddleware] }, listAppointments);

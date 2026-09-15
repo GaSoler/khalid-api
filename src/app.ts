@@ -34,6 +34,7 @@ export async function buildApp() {
 	await app.register(helmet);
 	await app.register(cors, {
 		origin: env.NODE_ENV === "production" ? ["https://seu-frontend.com"] : true,
+		methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 	});
 
 	// ── Global error handler ──────────────────────────────────

@@ -40,7 +40,10 @@ export class CreateAppointmentUseCase {
 	}: CreateAppointmentUseCaseRequest): Promise<CreateAppointmentUseCaseResponse> {
 		// Parse date e time
 		const [hours, minutes] = time.split(":").map(Number);
-		const appointmentDate = new Date(date);
+
+		// Parseia em horário local (como fez em GetBarberAvailableTimes)
+		const [year, month, day] = date.split("-").map(Number);
+		const appointmentDate = new Date(year, month - 1, day);
 
 		// 0.1 Valida se é no passado
 		const appointmentDateTime = new Date(appointmentDate);
