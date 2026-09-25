@@ -33,7 +33,7 @@ export async function buildApp() {
 	// ── Security plugins ──────────────────────────────────────
 	await app.register(helmet);
 	await app.register(cors, {
-		origin: env.NODE_ENV === "production" ? ["https://seu-frontend.com"] : true,
+		origin: env.NODE_ENV === "production" ? env.FRONTEND_URL.split(",") : true,
 		methods: ["GET", "HEAD", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 	});
 
